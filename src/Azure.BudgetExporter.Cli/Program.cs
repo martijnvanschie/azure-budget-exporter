@@ -1,58 +1,58 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using Azure.BudgetExporter;
+using Azure.BudgetExporter.Cli;
+using Azure.BudgetExporter.Cli.Commands;
 using Azure.Identity;
 using Azure.ResourceManager;
 using Azure.ResourceManager.ManagementGroups;
 using Azure.ResourceManager.Resources;
 using CsvHelper;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System.Globalization;
 
-Console.WriteLine("Starting budget export!");
+var app = new CommandApp();
+//app.SetDefaultCommand<AccumulatedCostCommand>();
 
-var client = new ArmClient(new AzureCliCredential());
-var importer = new BudgetImporter(client);
-
-var tenant = client.GetTenants().First();
-Console.WriteLine($"Tenant: {tenant.Data.DisplayName}");
-
-var mg = client.GetManagementGroups();
-
-foreach (ManagementGroupResource r in mg)
+app.Configure(config => 
 {
-    Console.WriteLine($"Management Group: {r.Data.Name}");
-    importer.ImportManagementGroup(r);
-}
+    config.SetApplicationName(Constants.APP_NAME);
 
-var subs = client.GetSubscriptions();
+    config.AddExample(new[] { "export" });
+    //config.AddExample(new[] { "export", "-o", "csv" });
+    //config.AddExample(new[] { "export", "-o", "db" });
+    
+    //config.AddExample(new[] { "accumulatedCost", "-o", "json" });
+    //config.AddExample(new[] { "costByResource", "-s", "00000000-0000-0000-0000-000000000000", "-o", "text" });
+    //config.AddExample(new[] { "dailyCosts", "--dimension", "MeterCategory" });
+    //config.AddExample(new[] { "budgets", "-s", "00000000-0000-0000-0000-000000000000" });
+    //config.AddExample(new[] { "detectAnomalies", "--dimension", "ResourceId", "--recent-activity-days", "4" });
+    //config.AddExample(new[] { "costByTag", "--tag", "cost-center" });
 
-foreach (SubscriptionResource s in subs)
-{
-    importer.ImportSubscription(s);
-}
+#if DEBUG
+    config.PropagateExceptions();
+#endif
+
+    // Add commands
+    config.AddCommand<ExportCommand>("export")
+    .WithDescription("Export configured budgets from your tenant to an output format.");
+
+    config.ValidateExamples();
+
+    config.SetExceptionHandler(ex =>
+    {
+        AnsiConsole.MarkupInterpolated($"[red]{ex.Message}[/]");
+        return -99;
+    });
+
+});
 
 try
 {
-    importer.ParseBudgetResources();
+    return await app.RunAsync(args);
 }
 catch (Exception ex)
 {
-    Console.WriteLine($"{ex.Message}");
-}
-
-using (var writer = new StreamWriter("export.csv"))
-
-{
-    using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-    {
-        try
-        {
-            //csv.Context.RegisterClassMap<FooMap>();
-            csv.WriteRecords(importer.Budgets);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.Message);
-        }
-
-    }
+    AnsiConsole.WriteException(ex, ExceptionFormats.ShortenEverything);
+    return -99;
 }

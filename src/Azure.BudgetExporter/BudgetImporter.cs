@@ -5,7 +5,6 @@ using Azure.ResourceManager.ManagementGroups;
 using Azure.ResourceManager.Resources;
 
 namespace Azure.BudgetExporter;
-
 public class BudgetImporter
 {
     private List<ManagementGroupResource> _managementGroupResources = new List<ManagementGroupResource>();
@@ -14,6 +13,8 @@ public class BudgetImporter
     private List<ConsumptionBudgetResource> _budgetResources = new List<ConsumptionBudgetResource>();
     private List<Budget> _budgets = new List<Budget>();
     private ArmClient _client;
+
+    public event EventHandler<ResourceScannedEventArgs> ResourceScanned;
 
     public List<ConsumptionBudgetResource> BudgetResources
     {
@@ -97,11 +98,12 @@ public class BudgetImporter
     {
         try
         {
-            Console.WriteLine($"Importing management group {managementGroupResource.Data.DisplayName}");
             _managementGroupResources.Add(managementGroupResource);
 
             var budgets = _client.GetConsumptionBudgets(managementGroupResource.Id);
             _budgetResources.AddRange(budgets);
+
+            ResourceScanned?.Invoke(this, new ResourceScannedEventArgs() { ResourceType = "Managemeent Group", ResourceName = managementGroupResource.Data.DisplayName });
         }
         catch (Exception ex)
         {
@@ -113,17 +115,18 @@ public class BudgetImporter
     {
         try
         {
-            Console.WriteLine($"Importing subscription {subscriptionResource.Data.DisplayName}");
             _subscriptionResource.Add(subscriptionResource);
 
             var budgets = _client.GetConsumptionBudgets(subscriptionResource.Id);
             _budgetResources.AddRange(budgets);
+            ResourceScanned?.Invoke(this, new ResourceScannedEventArgs() { ResourceType = "Subscription", ResourceName = subscriptionResource.Data.DisplayName });
 
             var rgs = subscriptionResource.GetResourceGroups();
 
             foreach (ResourceGroupResource rg in rgs)
             {
                 ImportResourceGroup(rg);
+                ResourceScanned?.Invoke(this, new ResourceScannedEventArgs() { ResourceType = "Resource Group", ResourceName = rg.Data.Name });
             }
         }
         catch (Exception ex)
@@ -136,7 +139,6 @@ public class BudgetImporter
     {
         try
         {
-            Console.WriteLine($"Importing resource group {resourceGroupResource.Data.Name}");
             _resourceGroupResource.Add(resourceGroupResource);
 
             var budgets = _client.GetConsumptionBudgets(resourceGroupResource.Id);
