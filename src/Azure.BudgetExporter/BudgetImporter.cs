@@ -128,8 +128,8 @@ public class BudgetImporter
                 _managementGroupResources.Add(managementGroupResource);
                 _managementGroups.Add(new ManagementGroup() 
                 {
-                    Id = managementGroupResource.Id!,
-                    Name = managementGroupResource.Data.Name,
+                    ResourceId = managementGroupResource.Id!,
+                    ManagementGroupId = managementGroupResource.Data.Name,
                     DisplayName = managementGroupResource.Data.DisplayName
                 });
 
@@ -194,11 +194,11 @@ public class BudgetImporter
         {
             var r = new BudgetScopeResource();
             r.ResourceType = Model.ResourceType.ManagementGroup;
-            r.Id = item.Id.ToString();
+            r.ResourceId = item.Id.ToString();
             r.Name = item.Data.Name;
             r.DisplayName = item.Data.DisplayName;
 
-            if (_budgetScopeResources.Any(r => r.Id == item.Id) == false)
+            if (_budgetScopeResources.Any(r => r.ResourceId == item.Id) == false)
             {
                 _budgetScopeResources.Add(r);
             }
@@ -217,11 +217,11 @@ public class BudgetImporter
                             var childr = new BudgetScopeResource();
                             childr.Parent = r;
                             childr.ResourceType = Model.ResourceType.ManagementGroup;
-                            childr.Id = child.Id;
+                            childr.ResourceId = child.Id;
                             childr.Name = child.Name;
                             childr.DisplayName = child.DisplayName;
 
-                            if (_budgetScopeResources.Any(r => r.Id == childr.Id) == false)
+                            if (_budgetScopeResources.Any(r => r.ResourceId == childr.ResourceId) == false)
                             {
                                 _budgetScopeResources.Add(childr);
                             }
@@ -238,11 +238,11 @@ public class BudgetImporter
                             var childr = new BudgetScopeResource();
                             childr.Parent = r;
                             childr.ResourceType = Model.ResourceType.Subscription;
-                            childr.Id = child.Id;
+                            childr.ResourceId = child.Id;
                             childr.Name = child.Name;
                             childr.DisplayName = child.DisplayName;
 
-                            if (_budgetScopeResources.Any(r => r.Id == childr.Id) == false)
+                            if (_budgetScopeResources.Any(r => r.ResourceId == childr.ResourceId) == false)
                             {
                                 _budgetScopeResources.Add(childr);
                             }
@@ -259,11 +259,11 @@ public class BudgetImporter
             {
                 var sr = new BudgetScopeResource();
                 sr.ResourceType = Model.ResourceType.Subscription;
-                sr.Id = s.Id.ToString();
+                sr.ResourceId = s.Id.ToString();
                 sr.Name = s.Data.Id.Name;
                 sr.DisplayName = s.Data.DisplayName;
 
-                if (_budgetScopeResources.Any(r => sr.Id == item.Id) == false)
+                if (_budgetScopeResources.Any(r => sr.ResourceId == item.Id) == false)
                 {
                     _budgetScopeResources.Add(sr);
                     ResourceScanned?.Invoke(this, new ResourceScannedEventArgs() { Resource = sr });
@@ -278,7 +278,7 @@ public class BudgetImporter
         var subs = _budgetScopeResources.Where(r => r.ResourceType == Model.ResourceType.Subscription).ToList();
         foreach (var s in subs)
         {
-            var sub = _client.GetSubscriptionResource(new Azure.Core.ResourceIdentifier(s.Id));
+            var sub = _client.GetSubscriptionResource(new Azure.Core.ResourceIdentifier(s.ResourceId));
             var rgs = sub.GetResourceGroups();
 
             foreach (ResourceGroupResource rg in rgs)
@@ -286,11 +286,11 @@ public class BudgetImporter
                 var childr = new BudgetScopeResource();
                 childr.Parent = s;
                 childr.ResourceType = Model.ResourceType.ResourceGroup;
-                childr.Id = rg.Id!;
+                childr.ResourceId = rg.Id!;
                 childr.Name = rg.Data.Name;
                 childr.DisplayName = rg.Data.Name;
 
-                if (_budgetScopeResources.Any(r => r.Id == childr.Id) == false)
+                if (_budgetScopeResources.Any(r => r.ResourceId == childr.ResourceId) == false)
                 {
                     _budgetScopeResources.Add(childr);
                 }
@@ -302,18 +302,18 @@ public class BudgetImporter
 
     private void ImportBudgets()
     {
-        foreach (var resource in _budgetScopeResources)
+        Parallel.ForEach(_budgetScopeResources, resource =>
         {
             BudgetImporting?.Invoke(this, new BudgetImportingEventArgs() { Resource = resource, ImportingStatus = BudgetImportingStatus.StartedImport });
 
             try
             {
-                var budgets = _client.GetConsumptionBudgets(new ResourceIdentifier(resource.Id)).ToList();
+                var budgets = _client.GetConsumptionBudgets(new ResourceIdentifier(resource.ResourceId)).ToList();
 
                 if (budgets == null || !budgets.Any())
                 {
                     BudgetImporting?.Invoke(this, new BudgetImportingEventArgs() { Resource = resource, ImportingStatus = BudgetImportingStatus.FinishedImport });
-                    continue;
+                    return;
                 }
 
                 foreach (ConsumptionBudgetResource budget in budgets)
@@ -328,9 +328,6 @@ public class BudgetImporter
             }
 
             BudgetImporting?.Invoke(this, new BudgetImportingEventArgs() { Resource = resource, ImportingStatus = BudgetImportingStatus.FinishedImport });
-
-            // This break is used for debugging and forces to only import the first budget resource.
-            //break;
-        }
+        });
     }
 }

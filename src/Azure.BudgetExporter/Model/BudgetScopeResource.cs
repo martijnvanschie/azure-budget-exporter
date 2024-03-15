@@ -8,7 +8,7 @@ namespace Azure.BudgetExporter.Model
 {
     public class BudgetScopeResource
     {
-        public string Id { get; set; } = string.Empty;
+        public string ResourceId { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string DisplayName { get; set; } = string.Empty;
 

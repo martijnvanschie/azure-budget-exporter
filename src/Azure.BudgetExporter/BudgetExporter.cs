@@ -67,8 +67,8 @@ namespace Azure.BudgetExporter
 
                     var b = new ManagementGroup()
                     {
-                        Id = resource.Id,
-                        Name = resource.Name,
+                        ResourceId = resource.ResourceId,
+                        ManagementGroupId = resource.Name,
                         DisplayName = resource.DisplayName
                     };
 
@@ -117,8 +117,8 @@ namespace Azure.BudgetExporter
 
                     var b = new Subscription()
                     {
-                        Id = resource.Id,
-                        Name = resource.Name,
+                        ResourceId = resource.ResourceId,
+                        SubscriptionId = resource.Name,
                         DisplayName = resource.DisplayName
                     };
 
@@ -167,8 +167,7 @@ namespace Azure.BudgetExporter
 
                     var b = new ResourceGroup()
                     {
-                        Id = resource.Id,
-                        Name = resource.Name,
+                        ResourceId = resource.ResourceId,
                         DisplayName = resource.DisplayName
                     };
 
@@ -195,10 +194,10 @@ namespace Azure.BudgetExporter
                     {
                         var b = new Budget()
                         {
-                            Id = resource.Id,
+                            Id = resource.ResourceId,
                             Name = resource.Name,
                             Scope = resource.ResourceType.ToString(),
-                            ScopeIdentifier = resource.Id,
+                            ScopeIdentifier = resource.ResourceId,
                             ResetPeriod = budget.ResetPeriod,
                             Amount = Math.Round(budget.Amount, 2).ToString()
                         };

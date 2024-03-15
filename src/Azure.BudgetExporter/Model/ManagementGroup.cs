@@ -8,27 +8,9 @@ namespace Azure.BudgetExporter.Model
 {
     public class ManagementGroup
     {
-        public string Id { get; set; } = string.Empty;
+        public string ResourceId { get; set; } = string.Empty;
 
-        public string Name { get; set; }
-
-        public string DisplayName { get; set; }
-    }
-
-    public class Subscription
-    {
-        public string Id { get; set; } = string.Empty;
-
-        public string Name { get; set; }
-
-        public string DisplayName { get; set; }
-    }
-
-    public class ResourceGroup
-    {
-        public string Id { get; set; } = string.Empty;
-
-        public string Name { get; set; }
+        public string ManagementGroupId { get; set; }
 
         public string DisplayName { get; set; }
     }
