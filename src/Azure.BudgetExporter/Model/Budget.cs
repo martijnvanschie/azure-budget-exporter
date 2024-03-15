@@ -1,6 +1,6 @@
 ﻿using CsvHelper.Configuration.Attributes;
 
-namespace Azure.BudgetExporter
+namespace Azure.BudgetExporter.Model
 {
     public class Budget
     {

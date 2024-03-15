@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Azure.BudgetExporter.Cli": {
+      "commandName": "Project",
+      "commandLineArgs": "export"
+    }
+  }
+}
