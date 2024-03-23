@@ -72,7 +72,7 @@ public class BudgetImporter
                 b.ResetPeriod = r.Data.TimeGrain.ToString();
                 b.Amount = r.Data.Amount.Value.ToString();
                 b.EvaluatedSpend = r.Data.CurrentSpend.Amount.ToString();
-                b.ForecastSpend = r.Data.ForecastSpend?.Amount?.ToString() ?? "NaN";
+                b.ForecastedSpend = r.Data.ForecastSpend?.Amount?.ToString() ?? "NaN";
 
                 switch (r.Id.Parent.ResourceType.Type.ToLower())
                 {

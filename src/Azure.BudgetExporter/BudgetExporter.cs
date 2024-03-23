@@ -194,12 +194,14 @@ namespace Azure.BudgetExporter
                     {
                         var b = new Budget()
                         {
-                            Id = resource.ResourceId,
-                            Name = resource.Name,
+                            Id = budget.Id,
+                            Name = budget.Name,
                             Scope = resource.ResourceType.ToString(),
                             ScopeIdentifier = resource.ResourceId,
                             ResetPeriod = budget.ResetPeriod,
-                            Amount = Math.Round(budget.Amount, 2).ToString()
+                            Amount = Math.Round(budget.Amount, 2).ToString(),
+                            EvaluatedSpend = budget.EvaluatedSpend.HasValue ? Math.Round(budget.EvaluatedSpend.Value, 2).ToString() : null,
+                            ForecastedSpend = budget.ForecastedSpend.HasValue ? Math.Round(budget.ForecastedSpend.Value, 2).ToString() : null
                         };
 
                         budgets.Add(b);

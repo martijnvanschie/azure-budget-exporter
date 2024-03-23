@@ -27,6 +27,6 @@ namespace Azure.BudgetExporter.Model
         //[NumberStyles(NumberStyles.Currency | NumberStyles.AllowCurrencySymbol)]
         public string? EvaluatedSpend { get; set; }
 
-        public string? ForecastSpend { get; set; }
+        public string? ForecastedSpend { get; set; }
     }
 }
