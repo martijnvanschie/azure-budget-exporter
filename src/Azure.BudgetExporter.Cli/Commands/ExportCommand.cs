@@ -5,14 +5,8 @@ using Azure.ResourceManager.Resources;
 using CsvHelper;
 using Spectre.Console;
 using Spectre.Console.Cli;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml;
 
 namespace Azure.BudgetExporter.Cli.Commands
 {
@@ -20,10 +14,6 @@ namespace Azure.BudgetExporter.Cli.Commands
     {
         public class Settings : CommandSettings
         {
-            //[CommandArgument(0, "[Filename]")]
-            //[DefaultValue("")]
-            //public string FileName { get; set; }
-
             [CommandOption("-f|--filename")]
             [DefaultValue("export.csv")]
             [Description("Output filename")]
@@ -33,6 +23,11 @@ namespace Azure.BudgetExporter.Cli.Commands
             [DefaultValue("csv")]
             [Description("Output format, accepted values: csv, table")]
             public string Output { get; set; }
+
+            [CommandOption("-d|--dimensiontables")]
+            [DefaultValue(false)]
+            [Description("Export the dimension tables into a seperate file.")]
+            public bool ExportDimensionTables { get; set; }
         }
 
         public override int Execute(CommandContext context, Settings settings)
@@ -41,80 +36,36 @@ namespace Azure.BudgetExporter.Cli.Commands
             AnsiConsole.WriteLine();
 
             var client = new ArmClient(new AzureCliCredential());
-            var importer = new BudgetImporter(client);
+            var importer = new BudgetImporter();
             importer.ResourceScanned += Importer_ResourceScanned;
-
-            AnsiConsole.Status()
-                .Start("Scanning Management Groups...", ctx =>
-                {
-                    var mg = client.GetManagementGroups();
-
-                    foreach (ManagementGroupResource r in mg)
-                    {
-                        AnsiConsole.MarkupLine($"Management Group: [blue]{r.Data.Name}[/]");
-                        importer.ImportManagementGroup(r);
-                    }
-
-                    AnsiConsole.MarkupLine("Management Groups scanned...");
-
-                    // Update the status and spinner
-                    ctx.Status("Scanning Subscriptions and Resource Groups");
-                    ctx.Spinner(Spinner.Known.Star);
-                    ctx.SpinnerStyle(Style.Parse("yellow"));
-
-                    var subs = client.GetSubscriptions();
-
-                    foreach (SubscriptionResource s in subs)
-                    {
-                        importer.ImportSubscription(s);
-                    }
-
-                    AnsiConsole.MarkupLine("Subscriptions scanned...");
-
-                    ctx.Status("Parsing imports");
-                    ctx.Spinner(Spinner.Known.Star);
-                    ctx.SpinnerStyle(Style.Parse("gray"));
-
-                    try
-                    {
-                        importer.ParseBudgetResources();
-                    }
-                    catch (Exception ex)
-                    {
-                        AnsiConsole.MarkupLine($"{ex.Message}");
-                    }
-
-                    AnsiConsole.MarkupLine("Imports parsed...");
-
-                    ctx.Status("Exporting budgets");
-
-                    using (var writer = new StreamWriter(settings.Filename))
-
-                    {
-                        using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
-                        {
-                            try
-                            {
-                                //csv.Context.RegisterClassMap<FooMap>();
-                                csv.WriteRecords(importer.Budgets);
-                            }
-                            catch (Exception ex)
-                            {
-                                AnsiConsole.MarkupLine(ex.Message);
-                            }
-
-                        }
-                    }
-
-                    AnsiConsole.MarkupLine($"Export done to file [blue]{settings.Filename}[/]...");
-                });
+            importer.BudgetImporting += Importer_BudgetImporting;
+            importer.StartImport();
 
             return 0;
         }
 
         private void Importer_ResourceScanned(object? sender, ResourceScannedEventArgs e)
         {
-            AnsiConsole.MarkupLine($"{e.ResourceType} {e.ResourceName} scanned...");
+            AnsiConsole.MarkupLine($"{e.Resource?.ResourceType} {e.Resource?.Name} scanned...");
+        }
+
+        private void Importer_BudgetImporting(object? sender, BudgetImportingEventArgs e)
+        {
+            switch (e.ImportingStatus)
+            {
+                case BudgetImportingStatus.StartedImport:
+                    AnsiConsole.MarkupLine($"Importing budget for {e.Resource?.ResourceType} {e.Resource?.Name} ...");
+                    break;
+                case BudgetImportingStatus.FailedImport:
+                    AnsiConsole.MarkupLine($"[red]Importing budget for {e.Resource?.ResourceType} {e.Resource?.Name} ...[/]");
+                    break;
+                case BudgetImportingStatus.FinishedImport:
+                    AnsiConsole.MarkupLineInterpolated($"[green]Finished importing budget(s) for {e.Resource?.ResourceType} {e.Resource?.Name} ...[/]");
+                    break;
+                default:
+                    break;
+            }
+
         }
     }
 }

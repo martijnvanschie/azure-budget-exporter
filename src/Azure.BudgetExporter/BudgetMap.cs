@@ -1,4 +1,5 @@
-﻿using CsvHelper.Configuration;
+﻿using Azure.BudgetExporter.Model;
+using CsvHelper.Configuration;
 
 namespace Azure.BudgetExporter
 {

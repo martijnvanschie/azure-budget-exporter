@@ -1,6 +1,6 @@
 ﻿using CsvHelper.Configuration.Attributes;
 
-namespace Azure.BudgetExporter
+namespace Azure.BudgetExporter.Model
 {
     public class Budget
     {
@@ -27,6 +27,6 @@ namespace Azure.BudgetExporter
         //[NumberStyles(NumberStyles.Currency | NumberStyles.AllowCurrencySymbol)]
         public string? EvaluatedSpend { get; set; }
 
-        public string? ForecastSpend { get; set; }
+        public string? ForecastedSpend { get; set; }
     }
 }
